@@ -315,6 +315,7 @@
 		"ml-date-format" => "d-m-Y",
 		"ml-received-by" => "ontvangen door",
 		"ml-sure-to-send" => "Je staat op het punt om deze mailing naar [[count]] adres(sen) te versturen. Wil je doorgaan?",
+		"ml-new-addresses" => "Vul e-mailaddressen in om aan de mailinglist toe te voegen. Meerdere adressen kunnen worden gescheiden door een komma, of over meerdere regels verdeeld worden.",
 
 		// mailing list - progress feedback ui
 		"ml-sure-to-close" => "Weet je zeker dat je het verzenden wil onderbreken?",
@@ -331,6 +332,9 @@
 		"ml-successfully-unsubscribed-by-admin" => "[[email]] is succesvol afgemeld",
 		"ml-successfully-created" => "succesvol aangemaakt",
 		"ml-successfully-updated" => "succesvol bijgewerkt",
+		"ml-successfully-added" => "met succes [[count]] e-mailadressen toegevoegd",
+		"ml-invalid-address" => "[[email]] is geen geldig e-mailadres",
+		"ml-address-exists" => "[[email]] zat al in de mailinglist",
 		"ml-successfully-sent" => "succesvol verstuurd",
 		"ml-confirmation-mail-sent" => "U ontvangt spoedig een email met een link. Bevestig uw aanmelding door op de link in de e-mail te klikken. Heeft u de email niet ontvangen? Kijk dan in uw spam folder.",
 

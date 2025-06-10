@@ -37,6 +37,7 @@ class mailinglist extends HyphaDatatypePage {
 	const FIELD_NAME_UNSUBSCRIBE_CODE = 'unsubscribe-code';
 	const FIELD_NAME_REMINDED = 'reminded';
 	const FIELD_NAME_RECEIVERS = 'receivers';
+	const FIELD_NAME_NEW_ADDRESSES = 'new-addresses';
 
 	const PATH_EDIT = 'edit';
 	const PATH_MAILS = 'mails';
@@ -51,6 +52,8 @@ class mailinglist extends HyphaDatatypePage {
 	const PATH_DELETE_ADDRESS = 'delete';
 	const PATH_DELETE_ADDRESS_EMAIL = 'delete?email=[[email]]';
 
+	const PATH_ADD = 'add';
+
 	const PATH_CONFIRM = 'confirm';
 	const PATH_CONFIRM_CODE = 'confirm?code=[[code]]';
 	const PATH_UNSUBSCRIBE = 'unsubscribe';
@@ -60,6 +63,7 @@ class mailinglist extends HyphaDatatypePage {
 
 	const CMD_DELETE = 'delete';
 	const CMD_SUBSCRIBE = 'subscribe';
+	const CMD_ADD = 'add';
 	const CMD_SAVE = 'save';
 	const CMD_SEND = 'send';
 	const CMD_SEND_TEST = 'test_send';
@@ -111,6 +115,8 @@ class mailinglist extends HyphaDatatypePage {
 			case [self::PATH_EDIT,                 null]:                return $this->editView($request);
 			case [self::PATH_EDIT,                 self::CMD_SAVE]:      return $this->editAction($request);
 			case [self::PATH_ADDRESSES,            null]:                return $this->addressesView($request);
+			case [self::PATH_ADDRESSES,            self::CMD_ADD]:       return $this->subscribeBatchAction($request);
+			case [self::PATH_ADD,                  null]:                return $this->addressesAddView($request);
 			case [self::PATH_REMIND,               null]:                return $this->remindAction($request);
 			case [self::PATH_DELETE_ADDRESS,       null]:                return $this->deleteAddressAction($request);
 			case [self::PATH_CONFIRM,              null]:                return $this->confirmEmailAction($request);
@@ -369,6 +375,59 @@ class mailinglist extends HyphaDatatypePage {
 
 		// all is success refresh page with success notification
 		return 'reload';
+	}
+
+	/**
+	 * @param HyphaRequest $request
+	 * @return string|null
+	 */
+	protected function subscribeBatchAction(HyphaRequest $request) {
+		if (!isAdmin()) {
+			notify('error', __(isUser() ? 'admin-rights-needed-to-perform-action' : 'login-to-perform-action'));
+			return ['redirect', $this->path()];
+		}
+
+		$addressList = preg_split('/[,\n\r]/', $_POST['new-addresses']);
+
+		$count = 0;
+		foreach($addressList as $newaddress) {
+			$email = strtolower(trim($newaddress));
+			if (!$email)
+				continue;
+
+			// check if email is valid.
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				notify('error', ucfirst(__('ml-invalid-address', ['email' => $email])));
+			}
+			else {
+				// check if email is already in the list.
+				$xpath = './/' . self::FIELD_NAME_ADDRESS . '[@' . self::FIELD_NAME_EMAIL . '=' . xpath_encode($email) . ']';
+				$address = $this->findAddresses($xpath)->first();
+
+				if ($address instanceof HyphaDomElement) {
+					notify('error', ucfirst(__('ml-address-exists', ['email' => $email])));
+				}
+				else {
+					$this->xml->lockAndReload();
+					// add email with status confirmed
+					/** @var HyphaDomElement $address */
+					$address = $this->xml->createElement(self::FIELD_NAME_ADDRESS);
+					$address->setAttribute(self::FIELD_NAME_EMAIL, $email);
+					$address->setAttribute(self::FIELD_NAME_STATUS, self::ADDRESS_STATUS_CONFIRMED);
+					$address->setAttribute(self::FIELD_NAME_UNSUBSCRIBE_CODE, $this->constructCode());
+					$address->setAttribute(self::FIELD_NAME_REMINDED, false);
+					/** @var HyphaDomElement $addressesContainer */
+					$addressesContainer = $this->getDoc()->get(self::FIELD_NAME_ADDRESSES_CONTAINER);
+					$addressesContainer->append($address);
+					$this->xml->saveAndUnlock();
+					$count++;
+				}
+			}
+		}
+
+		// all is success return to address list
+		if ($count) notify('success', ucfirst(__('ml-successfully-added', ['count' => $count])));
+		return ['redirect', $this->path(self::PATH_ADDRESSES)];
 	}
 
 	/**
@@ -640,7 +699,42 @@ class mailinglist extends HyphaDatatypePage {
 		/** @var HyphaDomElement $commands */
 		$commands = $this->html->find('#pageCommands');
 		$commands->append($this->makeActionButton(__('back')));
+		if (isAdmin()) $commands->append($this->makeActionButton(__('add'), self::PATH_ADD));
 		return null;
+	}
+
+	protected function addressesAddView(HyphaRequest $request) {
+		if (!isAdmin()) {
+			notify('error', __(isUser() ? 'admin-rights-needed-to-perform-action' : 'login-to-perform-action'));
+			return ['redirect', $this->path()];
+		}
+
+		$html = <<<EOF
+			<div class="section" style="padding:5px; margin-bottom:5px; position:relative;">
+				[[new-addresses]]<br/><textarea required cols="100" rows="24" id="[[field-name-new-addresses]]" name="[[field-name-new-addresses]]" />
+			</div>
+EOF;
+
+		$vars = [
+			'new-addresses' => __('ml-new-addresses'),
+			'field-name-new-addresses' => self::FIELD_NAME_NEW_ADDRESSES,
+		];
+
+		$html = hypha_substitute($html, $vars);
+
+		$form = new HTMLForm($html, null);
+
+		// update the form dom so that values and errors can be displayed
+		$form->updateDom();
+
+		/** @var HyphaDomElement $main */
+		$main = $this->html->find('#main');
+		$main->append($form);
+
+		/** @var HyphaDomElement $commands */
+		$commands = $this->html->find('#pageCommands');
+		$commands->append($this->makeActionButton(__('cancel'), self::PATH_ADDRESSES));
+		$commands->append($this->makeActionButton(__('add'), self::PATH_ADDRESSES, self::CMD_ADD));
 	}
 
 	protected function getNumberOfAddresses(){

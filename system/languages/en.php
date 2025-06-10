@@ -320,6 +320,7 @@
 		"ml-date-format" => "d/m/Y",
 		"ml-received-by" => "received by",
 		"ml-sure-to-send" => "Are you sure you want to send off this mailing to [[count]] recipient(s)?",
+		"ml-new-addresses" => "Enter e-mail addresses to be added to this mailinglist. Multiple addresses can be separated by a comma or put on separate lines.",
 
 		// mailing list - progress feedback ui
 		"ml-sure-to-close" => "Are you sure you want to leave and stop sending the mailing?",
@@ -336,6 +337,9 @@
 		"ml-successfully-unsubscribed-by-admin" => "[[email]] is successfully unsubscribed",
 		"ml-successfully-created" => "successfully created",
 		"ml-successfully-updated" => "successfully updated",
+		"ml-successfully-added" => "successfully added [[count]] e-mail addresses",
+		"ml-invalid-address" => "[[email]] is not a valid e-mail address",
+		"ml-address-exists" => "[[email]] was in the mailinglist already",
 		"ml-comment-please-confirm" => "Thank you for your comment. Please confirm your identity by clicking the confirmation links that we have sent you by email.",
 		"ml-successfully-sent" => "successfully sent",
 		"ml-confirmation-mail-sent" => "You will soon receive an email with a link. Please confirm your subscription. If you do not get the email, it may have landed in your spam folder.",
