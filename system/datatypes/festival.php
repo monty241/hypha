@@ -912,7 +912,7 @@ EOF;
 
 			$html.= '<h2 id="'.htmlspecialchars($id).'"><a href="'.htmlspecialchars($url).'">'.htmlspecialchars($title).'</a>';
 			if (isUser())
-				$html.= ' (<a class="edit" href="'.$editurl.'">'.__('festival-edit-contribution').'</a>)';
+				$html.= ' (<a class="edit" href="'.$editurl.'" title="'.__('festival-edit-contribution').'">'.__('edit-icon').'</a>)';
 			$html.= '</h2>';
 
 			// image and description

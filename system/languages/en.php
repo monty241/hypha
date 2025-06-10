@@ -59,6 +59,7 @@
 		"default-interface-language" => "default interface language",
 		"digest-interval" => "digest interval",
 		"default-new-page-type" => "default new page type",
+		"edit-icon" => "<i class=\"fa fa-pencil-square-o\" aria-hidden=\"true\"></i>",
 		"file" => "file",
 		"image" => "image",
 		"url" => "url",
