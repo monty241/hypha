@@ -109,9 +109,9 @@
 		$action - javascript action
 		$class - optional CSS class
 	*/
-	function makeLink($label, $action, $class = null) {
+	function makeLink($label, $action, $class = null, $tooltip = null) {
 		$classattr = ($class ? " class=".$class : "");
-		return '<a'.$classattr.' href="javascript:'.$action.'">'.$label.'</a>';
+		return '<a'.$classattr.' href="javascript:'.$action.'"'.($tooltip!==null?' title="'.$tooltip.'"':'').'>'.$label.'</a>';
 	}
 
 	/*
