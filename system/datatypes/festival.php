@@ -81,6 +81,7 @@
 		const ATTR_PARTICIPANT_PAYMENT_STATUS = 'payment-status';
 		const ATTR_PARTICIPANT_PAYMENT_TIMESTAMP = 'payment-timestamp';
 		const ATTR_PARTICIPANT_PHONE = 'phone';
+		const ATTR_PARTICIPANT_ATTENDING = 'attending';
 
 		const ATTR_EVENT_DAY = 'day';
 		const ATTR_EVENT_LOCATION = 'location';
@@ -199,22 +200,25 @@
 			if (!isUser()) return notify('error', __('login-to-edit'));
 
 			$stats = [];
+			$daystats = [];
 			$totalcount = 0;
 
 			$table = new HTMLTable();
 			$this->html->find('#main')->appendChild($table);
-			$table->addHeaderRow()->addCells([__('name'), __('email'), __('phone'), __('price'), __('festival-participant-status')]);
+			$table->addHeaderRow()->addCells([__('name'), __('email'), __('phone'), __('attending'), __('price'), __('festival-participant-status')]);
 			foreach ($this->xml->documentElement->getOrCreate(self::TAG_PARTICIPANTS_CONTAINER)->children() as $participant) {
 				$payamount = $participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_AMOUNT);
 				if ($payamount)
 					$status = $participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_STATUS);
 				else
 					$status = $participant->getAttribute(self::ATTR_PARTICIPANT_EMAIL_CONFIRMED) ? 'confirmed' : 'unconfirmed';
+				$attending = $participant->getAttribute(self::ATTR_PARTICIPANT_ATTENDING);
 
 				$row = $table->addRow();
 				$row->addCell($participant->getAttribute(self::ATTR_PARTICIPANT_NAME));
 				$row->addCell($participant->getAttribute(self::ATTR_PARTICIPANT_EMAIL));
 				$row->addCell($participant->getAttribute(self::ATTR_PARTICIPANT_PHONE));
+				$row->addCell($attending);
 				$row->addCell($payamount ? '€' . $payamount : '-');
 				$row->addCell($status);
 
@@ -226,6 +230,14 @@
 				if ($payamount) {
 					$stats[$status]['paysum'] += $payamount;
 				}
+
+				if ($attending) {
+					foreach(explode(',', $attending) as $day) {
+						if (!array_key_exists($day, $daystats))
+							$daystats[$day] = ['count' => 0];
+						$daystats[$day]['count'] += 1;
+					}
+				}
 			}
 
 			$table = new HTMLTable();
@@ -236,6 +248,11 @@
 				$row->addCell($category);
 				$row->addCell($values['count']);
 				$row->addCell('€' . $values['paysum']);
+			}
+			foreach ($daystats as $category => $values) {
+				$row = $table->addRow();
+				$row->addCell($category);
+				$row->addCell($values['count']);
 			}
 			$row = $table->addRow();
 			$row->addCell(__('total'));
@@ -397,6 +414,8 @@ EOF;
 					'field-name-email' => self::FIELD_NAME_EMAIL,
 					'phone' => __('festival-field-phone'),
 					'field-name-phone' => self::FIELD_NAME_PHONE,
+					'attending' => __('festival-field-attending'),
+					'field-name-attending' => self::FIELD_NAME_ATTENDING,
 					'amount' => __('festival-field-amount'),
 					'field-name-amount' => self::FIELD_NAME_AMOUNT,
 				];
@@ -449,6 +468,7 @@ EOF;
 			$participant->setAttribute(self::ATTR_PARTICIPANT_EMAIL, $form->dataFor(self::FIELD_NAME_EMAIL));
 			$participant->setAttribute(self::ATTR_PARTICIPANT_PHONE, $form->dataFor(self::FIELD_NAME_PHONE));
 			$participant->setAttribute(self::ATTR_PARTICIPANT_KEY, bin2hex(openssl_random_pseudo_bytes(8)));
+			$participant->setAttribute(self::ATTR_PARTICIPANT_ATTENDING, implode(',', $form->dataFor('attending', [])));
 			$this->xml->documentElement->getOrCreate(self::TAG_PARTICIPANTS_CONTAINER)->append($participant);
 			if ((float)$form->dataFor(self::FIELD_NAME_AMOUNT, 0) > 0)
 				$this->setupPayment($participant, $form->dataFor(self::FIELD_NAME_AMOUNT, 0));
