@@ -46,6 +46,7 @@
 		const CONFIG_TAG_DAYS = 'config';
 		const CONFIG_TAG_LOCATIONS = 'config';
 		const CONFIG_ID_TITLE = 'festival-title';
+		const CONFIG_ID_DESCRIPTION = 'festival-description';
 		const CONFIG_ID_SIGNUP_FORM = 'signup-form';
 		const CONFIG_ID_CONTRIBUTION_FORM = 'contribution-form';
 		const CONFIG_ID_DAYS = 'days';
@@ -313,11 +314,17 @@
 						<td><label for="[[field-name-title]]">[[title]]</label></td>
 						<td><input required id="[[field-name-title]]" name="[[field-name-title]]"/></td>
 					</tr>
+					<tr>
+						<td><label for="[[field-name-description]]">[[description]]</label></td>
+						<td><input required id="[[field-name-description]]" name="[[field-name-description]]"/></td>
+					</tr>
 				</table>
 EOF;
 			$vars = [
 				'title' => __('festival-field-festival-title'),
 				'field-name-title' => self::FIELD_NAME_TITLE,
+				'description' => __('festival-field-festival-description'),
+				'field-name-description' => self::FIELD_NAME_DESCRIPTION,
 			];
 
 			$html = hypha_substitute($html, $vars);
@@ -331,6 +338,7 @@ EOF;
 			// create form
 			$formData = [
 				self::FIELD_NAME_TITLE => $this->getConfig(self::CONFIG_ID_TITLE),
+				self::FIELD_NAME_DESCRIPTION => $this->getConfig(self::CONFIG_ID_DESCRIPTION),
 			];
 
 			$form = $this->createSettingsForm($formData);
@@ -361,6 +369,7 @@ EOF;
 
 			$this->xml->lockAndReload();
 			$this->setConfig(self::CONFIG_ID_TITLE, $form->dataFor(self::FIELD_NAME_TITLE));
+			$this->setConfig(self::CONFIG_ID_DESCRIPTION, $form->dataFor(self::FIELD_NAME_DESCRIPTION));
 			$this->xml->saveAndUnlock();
 
 			notify('success', ucfirst(__('festival-settings-saved')));
@@ -866,14 +875,18 @@ EOF;
 
 
 		protected function lineupView(HyphaRequest $request) {
-			$html = '';
+			$this->html->find('#pagename')->text(__('festival-lineup-for') . $this->getConfig(self::CONFIG_ID_TITLE));
+			$main = $this->html->find('#main');
+			$description = $this->getConfig(self::CONFIG_ID_DESCRIPTION);
+			$this->html->createElement('p')->addClass('lineup-description')->setText($description)->appendTo($main);
+			$contributionsdiv = $this->html->createElement('div')->addClass('contributions')->appendTo($main);
+
+
 			$contributions = $this->xml->documentElement->getOrCreate(self::TAG_CONTRIBUTION_CONTAINER)->children();
 			foreach($contributions as $contribution) {
-				$html.= $this->buildContribution($contribution);
-				$html.= '<div class="hbar"></div>';
+				$contributionsdiv->append($this->buildContribution($contribution));
+				$contributionsdiv->append('<div class="hbar"></div>');
 			}
-			$this->html->find('#pagename')->text(__('festival-lineup-for') . $this->getConfig(self::CONFIG_ID_TITLE));
-			$this->html->find('#main')->html($html);
 		}
 
 		/**
