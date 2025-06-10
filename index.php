@@ -128,16 +128,16 @@
 	registerPostProcessingFunction('dewikify');
 
 	// add hypha commands and navigation
-	$_cmds[] = '<a class="index" href="index/'.$hyphaLanguage.'">'.__('index').'</a>';
+	$_cmds[] = makeLink(__('index-icon'), makeAction('index/'.$hyphaContentLanguage, '', ''), 'index', __('index'));
 	if (!$O_O->isUser()) {
 		addLoginRoutine($hyphaHtml);
-		$_cmds[] = '<a class="login" href="javascript:login();">'.__('login').'</a>';
+		$_cmds[] = makeLink(__('login-icon'), 'login();', null, __('login'));
 	}
 	else {
 		addNewPageRoutine($hyphaHtml, $hyphaRequest->getRelativeUrlPathParts(false), hypha_getDataTypes());
-		$_cmds[] = makeLink(__('new-page'), 'newPage();', 'newPage');
-		$_cmds[] = makeLink(__('settings'), makeAction('settings', '', ''), 'settings');
-		$_cmds[] = makeLink(__('logout'), makeAction($hyphaRequest->getRelativeUrlPath(false),'logout',''), 'logout');
+		$_cmds[] = makeLink(__('new-page-icon'), 'newPage();', 'newPage', __('new-page'));
+		$_cmds[] = makeLink(__('settings-icon'), makeAction('settings', '', ''), 'settings', __('settings'));
+		$_cmds[] = makeLink(__('logout-icon'), makeAction($hyphaRequest->getRelativeUrlPath(false),'logout',''), 'logout', __('logout'));
 	}
 	// A class is used by default, but also look for the
 	// #hyphaCommands id which was used in earlier versions.
