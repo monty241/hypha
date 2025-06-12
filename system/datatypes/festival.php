@@ -1098,17 +1098,19 @@ EOF;
 			$hook_url = $this->constructFullPath($this->pagename . '/' . self::PATH_PAYMENTHOOK . '/' . $participant->getId() . '/' . $participant->getAttribute(self::ATTR_PARTICIPANT_KEY));
 
 			// load Mollie script
-			require_once('system/Mollie/API/Autoloader.php');
-			$mollie = new Mollie_API_Client;
-			$mollie->setApiKey($this->getConfig('mollie-key'));
+			require_once('system/mollie/api.php');
+			$mollie = new MollieAPI($this->getConfig('mollie-key'));
 
 			// create payment
-			$payment = $mollie->payments->create([
-				"amount"       => $participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_AMOUNT),
-				"description"  => $participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_DESCRIPTION),
-				"redirectUrl"  => $complete_url,
-				"webhookUrl"   => $hook_url,
-			]);
+			$payment = $mollie->createPayment(
+				/* currency */ "EUR",
+				/* amount */ $participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_AMOUNT),
+				/* description */ $participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_DESCRIPTION),
+				/* redirect_url */ $complete_url,
+				/* webhook_Url */ $hook_url
+			);
+			if ($payment === false)
+				return false;
 
 			$participant->setAttribute(self::ATTR_PARTICIPANT_PAYMENT_ID, $payment->id);
 			$participant->setAttribute(self::ATTR_PARTICIPANT_PAYMENT_STATUS, $payment->status);
@@ -1133,12 +1135,11 @@ EOF;
 		 */
 		protected function checkPayment($participant, $create_new = false) {
 			// load Mollie script
-			require_once('system/Mollie/API/Autoloader.php');
-			$mollie = new Mollie_API_Client;
-			$mollie->setApiKey($this->getConfig('mollie-key'));
+			require_once('system/mollie/api.php');
+			$mollie = new MollieAPI($this->getConfig('mollie-key'));
 
 			$this->xml->requireLock();
-			$payment = $mollie->payments->get($participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_ID));
+			$payment = $mollie->getPayment($participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_ID));
 
 			// If the status changed, process the change. If
 			// $create_new is true, do not send any "failed"
@@ -1151,11 +1152,11 @@ EOF;
 			// If the payment is not complete and not open,
 			// create a new payment ready to pay (if
 			// requested).
-			if ($create_new && !$payment->isPaid() && !$payment->isOpen())
+			if ($create_new && !$payment->isPaid && !$payment->isOpen)
 				$payment = $this->createPayment($participant);
 
-			if ($payment->isOpen())
-				return $payment->getPaymentUrl();
+			if ($payment->isOpen)
+				return $payment->checkout_url;
 			else
 				return null;
 		}
@@ -1170,9 +1171,9 @@ EOF;
 		 */
 		protected function processPaymentChange($participant, $payment, $mail_failed) {
 			$participant->setAttribute(self::ATTR_PARTICIPANT_PAYMENT_STATUS, $payment->status);
-			if ($payment->isPaid()) {
+			if ($payment->isPaid) {
 				if (!$participant->getAttribute(self::ATTR_PARTICIPANT_PAYMENT_TIMESTAMP)) {
-					$participant->setAttribute(self::ATTR_PARTICIPANT_PAYMENT_TIMESTAMP, $payment->paidDatetime);
+					$participant->setAttribute(self::ATTR_PARTICIPANT_PAYMENT_TIMESTAMP, $payment->paidAt);
 
 					// Send email
 					$contribute_url = $this->constructFullPath($this->pagename . '/' . self::PATH_CONTRIBUTE . '/' . $participant->getId() . '/' . $participant->getAttribute(self::ATTR_PARTICIPANT_KEY));
@@ -1196,9 +1197,9 @@ EOF;
 			}
 
 			$error_statuses = [
-				Mollie_API_Object_Payment::STATUS_CANCELLED,
-				Mollie_API_Object_Payment::STATUS_EXPIRED,
-				Mollie_API_Object_Payment::STATUS_FAILED,
+				MolliePayment::STATUS_CANCELLED,
+				MolliePayment::STATUS_EXPIRED,
+				MolliePayment::STATUS_FAILED,
 			];
 			if (in_array($payment->status, $error_statuses)) {
 				if ($mail_failed) {
