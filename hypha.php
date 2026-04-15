@@ -290,7 +290,7 @@
 			exit;
 		}
 		else {
-			if (!is_writable('.')) $errorMessage.= 'php has no write access to the hypa installation directory on the server<br/>';
+			if (!is_writable('.')) $errorMessage.= 'php has no write access to the hypha installation directory on the server<br/>';
 
 			// extract list of languages
 			$iso639 = json_decode(data('system/languages/languages.json'), true);
