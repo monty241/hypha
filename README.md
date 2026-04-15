@@ -20,7 +20,7 @@ The hypha homepage can be found at [hypha.net](https://hypha.net).
 
 ## Prerequisites
 
-Hypha needs Apache running, with php version 5.6 or above.
+Hypha needs Apache running, with php version 7.2 or above.
 
 ## Basic Installation
 
